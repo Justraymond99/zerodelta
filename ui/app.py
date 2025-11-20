@@ -14,8 +14,9 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 from qs.config import get_settings
-from qs.db import get_engine
+from qs.db import get_engine, init_db
 from sqlalchemy import text
+from sqlalchemy.exc import ProgrammingError, OperationalError
 
 # Page config
 st.set_page_config(
@@ -310,6 +311,43 @@ st.markdown("""
 settings = get_settings()
 engine = get_engine()
 
+# Initialize database tables if they don't exist
+try:
+    init_db()
+except Exception:
+    pass  # Tables might already exist
+
+# Helper function to check if a table exists
+def table_exists(table_name: str) -> bool:
+    """Check if a table exists in the database."""
+    try:
+        with engine.begin() as conn:
+            result = conn.execute(
+                text("""
+                    SELECT COUNT(*) as cnt 
+                    FROM information_schema.tables 
+                    WHERE table_schema = 'main' AND table_name = :table_name
+                """),
+                {"table_name": table_name}
+            ).fetchone()
+            return result and result[0] > 0
+    except Exception:
+        return False
+
+# Helper function to check if prices table has data
+def prices_table_has_data() -> bool:
+    """Check if prices table exists and has data."""
+    if not table_exists('prices'):
+        return False
+    try:
+        with engine.begin() as conn:
+            result = conn.execute(
+                text("SELECT COUNT(*) as cnt FROM prices")
+            ).fetchone()
+            return result and result[0] > 0
+    except Exception:
+        return False
+
 # Initialize session state
 if 'trades' not in st.session_state:
     st.session_state.trades = []
@@ -397,209 +435,228 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
 # Top metrics row
-col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4 = st.columns(4)
 
 pnl_color = "#10b981" if st.session_state.pnl >= 0 else "#ef4444"
 pnl_sign = "+" if st.session_state.pnl >= 0 else ""
-
-with col1:
-    st.markdown(f"""
+    
+    with col1:
+        st.markdown(f"""
     <div class="metric-card">
         <div class="metric-label">Total P&L</div>
         <div class="metric-value-large">{pnl_sign}${abs(st.session_state.pnl):,.0f}</div>
         <div style="color: {pnl_color}; font-size: 12px; font-weight: 600;">
             {pnl_sign}${abs(st.session_state.pnl):,.2f}
         </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with col2:
-    market_status = "OPEN" if datetime.now().hour >= 9 and datetime.now().hour < 16 else "CLOSED"
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        market_status = "OPEN" if datetime.now().hour >= 9 and datetime.now().hour < 16 else "CLOSED"
     market_color = "#10b981" if market_status == "OPEN" else "#ef4444"
     market_bg = "rgba(16, 185, 129, 0.15)" if market_status == "OPEN" else "rgba(239, 68, 68, 0.15)"
-    st.markdown(f"""
+        st.markdown(f"""
     <div class="metric-card">
         <div class="metric-label">Market Status</div>
         <div style="font-size: 24px; font-weight: 700; color: {market_color}; margin: 12px 0;">
             <span class="status-indicator status-online"></span>{market_status}
         </div>
-    </div>
-    """, unsafe_allow_html=True)
+        </div>
+        """, unsafe_allow_html=True)
     
-with col3:
-    latency = 23
+    with col3:
+        latency = 23
     latency_color = "#10b981" if latency < 50 else "#f59e0b" if latency < 100 else "#ef4444"
-    st.markdown(f"""
+        st.markdown(f"""
     <div class="metric-card">
         <div class="metric-label">System Latency</div>
         <div style="font-size: 28px; font-weight: 700; color: {latency_color}; margin: 12px 0;">
             {latency} <span style="font-size: 16px; color: #94a3b8;">ms</span>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
+        </div>
+        """, unsafe_allow_html=True)
     
-with col4:
+    with col4:
     st.markdown(f"""
     <div class="metric-card">
         <div class="metric-label">System Health</div>
         <div style="font-size: 24px; font-weight: 700; color: #10b981; margin: 12px 0;">
             <span class="status-indicator status-online"></span>Online
+            </div>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
     
-st.markdown("<br>", unsafe_allow_html=True)
-
+    st.markdown("<br>", unsafe_allow_html=True)
+    
 # Market data row
-col1, col2, col3 = st.columns(3)
-
-# Fetch market data
-try:
-    import yfinance as yf
-    sp500 = yf.Ticker("^GSPC")
-    nasdaq = yf.Ticker("^IXIC")
-    eurusd = yf.Ticker("EURUSD=X")
+    col1, col2, col3 = st.columns(3)
     
-    sp500_info = sp500.history(period="2d")
-    nasdaq_info = nasdaq.history(period="2d")
-    eurusd_info = eurusd.history(period="2d")
-    
-    if not sp500_info.empty:
-        sp500_value = float(sp500_info['Close'].iloc[-1])
-        sp500_prev = float(sp500_info['Close'].iloc[-2]) if len(sp500_info) > 1 else sp500_value
-        sp500_change = ((sp500_value - sp500_prev) / sp500_prev) * 100
-    else:
+    # Fetch market data
+    try:
+        import yfinance as yf
+        sp500 = yf.Ticker("^GSPC")
+        nasdaq = yf.Ticker("^IXIC")
+        eurusd = yf.Ticker("EURUSD=X")
+        
+        sp500_info = sp500.history(period="2d")
+        nasdaq_info = nasdaq.history(period="2d")
+        eurusd_info = eurusd.history(period="2d")
+        
+        if not sp500_info.empty:
+            sp500_value = float(sp500_info['Close'].iloc[-1])
+            sp500_prev = float(sp500_info['Close'].iloc[-2]) if len(sp500_info) > 1 else sp500_value
+            sp500_change = ((sp500_value - sp500_prev) / sp500_prev) * 100
+        else:
+            sp500_value = 4150.25
+            sp500_change = 1.24
+        
+        if not nasdaq_info.empty:
+            nasdaq_value = float(nasdaq_info['Close'].iloc[-1])
+            nasdaq_prev = float(nasdaq_info['Close'].iloc[-2]) if len(nasdaq_info) > 1 else nasdaq_value
+            nasdaq_change = ((nasdaq_value - nasdaq_prev) / nasdaq_prev) * 100
+        else:
+            nasdaq_value = 13600.81
+            nasdaq_change = 0.89
+        
+        if not eurusd_info.empty:
+            eurusd_value = float(eurusd_info['Close'].iloc[-1])
+            eurusd_prev = float(eurusd_info['Close'].iloc[-2]) if len(eurusd_info) > 1 else eurusd_value
+            eurusd_change = ((eurusd_value - eurusd_prev) / eurusd_prev) * 100
+        else:
+            eurusd_value = 1.0685
+            eurusd_change = -0.12
+    except Exception:
         sp500_value = 4150.25
         sp500_change = 1.24
-    
-    if not nasdaq_info.empty:
-        nasdaq_value = float(nasdaq_info['Close'].iloc[-1])
-        nasdaq_prev = float(nasdaq_info['Close'].iloc[-2]) if len(nasdaq_info) > 1 else nasdaq_value
-        nasdaq_change = ((nasdaq_value - nasdaq_prev) / nasdaq_prev) * 100
-    else:
         nasdaq_value = 13600.81
         nasdaq_change = 0.89
-    
-    if not eurusd_info.empty:
-        eurusd_value = float(eurusd_info['Close'].iloc[-1])
-        eurusd_prev = float(eurusd_info['Close'].iloc[-2]) if len(eurusd_info) > 1 else eurusd_value
-        eurusd_change = ((eurusd_value - eurusd_prev) / eurusd_prev) * 100
-    else:
         eurusd_value = 1.0685
         eurusd_change = -0.12
-except Exception:
-    sp500_value = 4150.25
-    sp500_change = 1.24
-    nasdaq_value = 13600.81
-    nasdaq_change = 0.89
-    eurusd_value = 1.0685
-    eurusd_change = -0.12
-
-with col1:
-    change_class = "metric-change-positive" if sp500_change >= 0 else "metric-change-negative"
-    change_sign = "+" if sp500_change >= 0 else ""
-    st.markdown(f"""
+    
+    with col1:
+        change_class = "metric-change-positive" if sp500_change >= 0 else "metric-change-negative"
+        change_sign = "+" if sp500_change >= 0 else ""
+        st.markdown(f"""
     <div class="market-card">
         <div class="metric-label">S&P 500</div>
         <div class="metric-value-large">{sp500_value:,.2f}</div>
         <div class="metric-change {change_class}">{change_sign}{sp500_change:.2f}%</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with col2:
-    change_class = "metric-change-positive" if nasdaq_change >= 0 else "metric-change-negative"
-    change_sign = "+" if nasdaq_change >= 0 else ""
-    st.markdown(f"""
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        change_class = "metric-change-positive" if nasdaq_change >= 0 else "metric-change-negative"
+        change_sign = "+" if nasdaq_change >= 0 else ""
+        st.markdown(f"""
     <div class="market-card">
         <div class="metric-label">NASDAQ</div>
         <div class="metric-value-large">{nasdaq_value:,.2f}</div>
         <div class="metric-change {change_class}">{change_sign}{nasdaq_change:.2f}%</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with col3:
-    change_class = "metric-change-positive" if eurusd_change >= 0 else "metric-change-negative"
-    change_sign = "+" if eurusd_change >= 0 else ""
-    st.markdown(f"""
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        change_class = "metric-change-positive" if eurusd_change >= 0 else "metric-change-negative"
+        change_sign = "+" if eurusd_change >= 0 else ""
+        st.markdown(f"""
     <div class="market-card">
         <div class="metric-label">EUR/USD</div>
         <div style="font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #00d4ff 0%, #0096ff 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 12px 0;">
             {eurusd_value:.4f}
         </div>
         <div class="metric-change {change_class}">{change_sign}{eurusd_change:.2f}%</div>
-    </div>
-    """, unsafe_allow_html=True)
+        </div>
+        """, unsafe_allow_html=True)
     
-st.markdown("<br>", unsafe_allow_html=True)
-
-# Chart and Order Entry row
-col_chart, col_order = st.columns([0.6, 0.4])
-
-with col_chart:
-    st.markdown('<div class="section-header">📈 Market Chart</div>', unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    # Get available symbols for selector
-    try:
-        with engine.begin() as conn:
-            available_symbols = pd.read_sql(
-                text("SELECT DISTINCT symbol FROM prices ORDER BY symbol"),
-                conn
-            )['symbol'].tolist()
-    except Exception:
-        available_symbols = []
+    # Chart and Order Entry row
+    col_chart, col_order = st.columns([0.6, 0.4])
     
-    # Symbol selector for chart
-    if available_symbols:
-        # Use session state symbol or default to first available
-        if st.session_state.chart_symbol not in available_symbols:
-            st.session_state.chart_symbol = available_symbols[0] if available_symbols else 'SPY'
-        
-        selected_symbol = st.selectbox(
-            "Select Ticker",
-            available_symbols,
-            index=available_symbols.index(st.session_state.chart_symbol) if st.session_state.chart_symbol in available_symbols else 0,
-            key="chart_symbol_selector"
-        )
-        
-        # Update session state when symbol changes
-        if selected_symbol != st.session_state.chart_symbol:
-            st.session_state.chart_symbol = selected_symbol
-            st.rerun()
-        
-        chart_symbol = st.session_state.chart_symbol
-    else:
-        chart_symbol = st.session_state.chart_symbol if 'chart_symbol' in st.session_state else 'SPY'
+    with col_chart:
+        st.markdown('<div class="section-header">📈 Market Chart</div>', unsafe_allow_html=True)
     
-    # Fetch chart data for selected symbol
-    try:
-        with engine.begin() as conn:
-            # Get the most recent data (try last 90 days, fallback to all available)
-            chart_data = pd.read_sql(
-                text("""
-                    SELECT date, adj_close
-                    FROM prices
-                    WHERE symbol = :sym
-                    AND date >= CURRENT_DATE - INTERVAL '90 days'
-                    ORDER BY date
-                """),
-                conn,
-                params={"sym": chart_symbol}
+        # Get available symbols for selector
+        try:
+            if prices_table_has_data():
+                with engine.begin() as conn:
+                    available_symbols = pd.read_sql(
+                        text("SELECT DISTINCT symbol FROM prices ORDER BY symbol"),
+                        conn
+                    )['symbol'].tolist()
+            else:
+                available_symbols = []
+        except Exception:
+            available_symbols = []
+    
+        # Symbol selector for chart
+        if available_symbols:
+            # Use session state symbol or default to first available
+            if st.session_state.chart_symbol not in available_symbols:
+                st.session_state.chart_symbol = available_symbols[0] if available_symbols else 'SPY'
+            
+            selected_symbol = st.selectbox(
+                "Select Ticker",
+                available_symbols,
+                index=available_symbols.index(st.session_state.chart_symbol) if st.session_state.chart_symbol in available_symbols else 0,
+                key="chart_symbol_selector"
             )
             
-            # If no recent data, get all available data for this symbol
-            if chart_data.empty:
+            # Update session state when symbol changes
+            if selected_symbol != st.session_state.chart_symbol:
+                st.session_state.chart_symbol = selected_symbol
+                st.rerun()
+            
+            chart_symbol = st.session_state.chart_symbol
+        else:
+            chart_symbol = st.session_state.chart_symbol if 'chart_symbol' in st.session_state else 'SPY'
+        
+        # Fetch chart data for selected symbol
+        try:
+            # Check if prices table exists and has data
+            if not prices_table_has_data():
+                st.info("📊 **No market data available yet.** Click **📥 Fetch Popular Tickers** in the sidebar to load initial data.")
+                st.stop()
+            
+            with engine.begin() as conn:
+                # Get the most recent data (try last 90 days, fallback to all available)
                 chart_data = pd.read_sql(
                     text("""
                         SELECT date, adj_close
                         FROM prices
                         WHERE symbol = :sym
+                        AND date >= CURRENT_DATE - INTERVAL '90 days'
                         ORDER BY date
                     """),
                     conn,
                     params={"sym": chart_symbol}
                 )
-            
-            if not chart_data.empty:
+                
+                # If no recent data, get all available data for this symbol
+                if chart_data.empty:
+                    chart_data = pd.read_sql(
+                        text("""
+                            SELECT date, adj_close
+                            FROM prices
+                            WHERE symbol = :sym
+                            ORDER BY date
+                        """),
+                        conn,
+                        params={"sym": chart_symbol}
+                    )
+        except (ProgrammingError, OperationalError) as e:
+            error_msg = str(e).lower()
+            if "table" in error_msg and "does not exist" in error_msg or "does not exist" in error_msg:
+                st.info("📊 **No market data available yet.** Click **📥 Fetch Popular Tickers** in the sidebar to load initial data.")
+                st.stop()
+            else:
+                st.error(f"Database error: {e}")
+                st.stop()
+        except Exception as e:
+            st.error(f"Error loading chart data: {e}")
+            st.stop()
+        
+        if not chart_data.empty:
                 # Sort by date to ensure correct order
                 chart_data = chart_data.sort_values('date')
                 
@@ -659,11 +716,11 @@ with col_chart:
                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
             else:
                 st.info(f"💡 **No data available for {chart_symbol}**\n\nTry selecting a different ticker or click '📥 Fetch Popular Tickers' in the sidebar to load data.")
-    except Exception as e:
-        st.warning(f"Chart error: {e}")
+        except Exception as e:
+            st.warning(f"Chart error: {e}")
         st.info("💡 If you see a database error, try clicking '📥 Fetch Popular Tickers' in the sidebar to initialize data.")
-
-with col_order:
+    
+    with col_order:
     st.markdown('<div class="section-header">📝 Order Entry</div>', unsafe_allow_html=True)
     
     with st.container():
@@ -743,14 +800,14 @@ with col_order:
                 st.error(f"❌ Error: {e}")
                 st.session_state.logs.insert(0, f"{datetime.now().strftime('%H:%M:%S')} Error: {str(e)}")
     
-st.markdown("<br>", unsafe_allow_html=True)
-
-# Bottom row: Trades, Algo Control, Live Logs
-col_trades, col_algo, col_logs = st.columns([0.4, 0.3, 0.3])
-
-with col_trades:
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Bottom row: Trades, Algo Control, Live Logs
+    col_trades, col_algo, col_logs = st.columns([0.4, 0.3, 0.3])
+    
+    with col_trades:
     st.markdown('<div class="section-header">📊 Recent Trades</div>', unsafe_allow_html=True)
-    if st.session_state.trades:
+        if st.session_state.trades:
             trades_df = pd.DataFrame(st.session_state.trades)
             st.dataframe(
                 trades_df,
@@ -764,19 +821,19 @@ with col_trades:
                     "quantity": "Quantity"
                 }
             )
-    else:
-        st.info("No trades yet")
-
-with col_algo:
+        else:
+            st.info("No trades yet")
+    
+    with col_algo:
     st.markdown('<div class="section-header">🤖 Algo Control</div>', unsafe_allow_html=True)
     if st.button("▶️ Start Algorithm", type="primary", use_container_width=True, key="algo_btn"):
-        st.session_state.algo_running = not st.session_state.algo_running
+            st.session_state.algo_running = not st.session_state.algo_running
         status = "started" if st.session_state.algo_running else "stopped"
         st.session_state.logs.insert(0, f"{datetime.now().strftime('%H:%M:%S')} Algorithm {status}")
-    
+        
     status_color = "#10b981" if st.session_state.algo_running else "#64748b"
     status_text = "🟢 Running" if st.session_state.algo_running else "⏸️ Stopped"
-    st.markdown(f"""
+        st.markdown(f"""
     <div style="margin-top: 20px; padding: 16px; background: rgba(255, 255, 255, 0.05); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);">
         <div style="font-size: 12px; color: #94a3b8; margin-bottom: 8px;">STATUS</div>
         <div style="font-size: 20px; font-weight: 700; color: {status_color};">
@@ -785,18 +842,18 @@ with col_algo:
         </div>
         """, unsafe_allow_html=True)
     
-with col_logs:
+    with col_logs:
     st.markdown('<div class="section-header">📋 System Logs</div>', unsafe_allow_html=True)
-    log_container = st.container()
-    with log_container:
+        log_container = st.container()
+        with log_container:
         log_html = '<div style="background: rgba(0, 0, 0, 0.3); border-radius: 12px; padding: 16px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px;">'
-        for log in st.session_state.logs[:10]:
+            for log in st.session_state.logs[:10]:
             log_html += f'<div style="color: #94a3b8; padding: 4px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">{log}</div>'
         log_html += '</div>'
         st.markdown(log_html, unsafe_allow_html=True)
-        
-        if not st.session_state.logs:
-            st.info("No logs yet")
+            
+            if not st.session_state.logs:
+                st.info("No logs yet")
 
 # Auto-refresh
 if auto_refresh:

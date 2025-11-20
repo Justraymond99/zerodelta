@@ -12,8 +12,9 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 from qs.config import get_settings
-from qs.db import get_engine
+from qs.db import get_engine, init_db
 from qs.strategies.manager import get_strategy_manager
+from sqlalchemy.exc import ProgrammingError, OperationalError
 
 # Import strategy classes - handle the conflict between qs/strategies.py and qs/strategies/
 # The __init__.py in qs/strategies/ tries to import from the file, but we need to ensure
@@ -76,18 +77,32 @@ st.markdown("""
 
 settings = get_settings()
 engine = get_engine()
+
+# Initialize database tables if they don't exist
+try:
+    init_db()
+except Exception:
+    pass  # Tables might already exist
+
 strategy_manager = get_strategy_manager()
 
 # Get available signals from database
+signals = []
 try:
     with engine.begin() as conn:
         signals = pd.read_sql(
             text("SELECT DISTINCT signal_name FROM signals ORDER BY signal_name"),
             conn
         )['signal_name'].tolist()
+except (ProgrammingError, OperationalError) as e:
+    error_msg = str(e).lower()
+    if "table" in error_msg and "does not exist" in error_msg:
+        signals = []
+    else:
+        signals = []
+        st.warning("Database is busy; retry in a few seconds.")
 except Exception:
     signals = []
-    st.warning("Database is busy; retry in a few seconds.")
 
 # Strategy types
 strategy_types = {
@@ -204,9 +219,10 @@ if strategy_manager.strategies:
                     st.info("No performance data available. Run backtest first.")
 else:
     st.info("👈 No strategies registered yet. Register a strategy above.")
+    strategies_list = []  # Initialize to avoid NameError
 
 # Strategy Comparison
-if len(strategies_list) > 1:
+if strategies_list and len(strategies_list) > 1:
     st.markdown('<div class="section-header">📈 Strategy Comparison</div>', unsafe_allow_html=True)
     
     comparison_df = strategy_manager.compare_strategies()

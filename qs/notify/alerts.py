@@ -16,6 +16,7 @@ except ImportError:
 from ..options import black_scholes, implied_volatility, calculate_historical_volatility
 from ..db import get_engine
 from sqlalchemy import text
+from sqlalchemy.exc import ProgrammingError, OperationalError
 from ..utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -55,11 +56,18 @@ def check_options_anomalies(
     try:
         # Get current stock price
         engine = get_engine()
-        with engine.begin() as conn:
-            result = conn.execute(
-                text("SELECT adj_close FROM prices WHERE symbol = :sym ORDER BY date DESC LIMIT 1"),
-                {"sym": symbol}
-            ).fetchone()
+        try:
+            with engine.begin() as conn:
+                result = conn.execute(
+                    text("SELECT adj_close FROM prices WHERE symbol = :sym ORDER BY date DESC LIMIT 1"),
+                    {"sym": symbol}
+                ).fetchone()
+        except (ProgrammingError, OperationalError) as e:
+            error_msg = str(e).lower()
+            if "table" in error_msg and "does not exist" in error_msg:
+                logger.debug(f"Prices table does not exist yet for {symbol}")
+                return None
+            raise
         
         if not result:
             return None
