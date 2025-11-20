@@ -130,12 +130,25 @@ if st.button("Register Strategy", type="primary"):
     try:
         StrategyClass = strategy_types[strategy_type]
         
+        # Check if strategy class is available
+        if StrategyClass is None:
+            st.error(f"❌ Strategy class '{strategy_type}' is not available. Please check that the strategy module is properly imported.")
+            st.stop()
+        
+        # Instantiate strategy based on type
         if strategy_type == "ML-Based":
-            strategy = StrategyClass(model_name=signals[0] if signals else "xgb_alpha")
+            model_name = signals[0] if signals else "xgb_alpha"
+            strategy = StrategyClass(model_name=model_name)
         elif strategy_type == "Momentum":
             strategy = StrategyClass(lookback=20, top_n=5)
         else:  # Mean Reversion
             strategy = StrategyClass(lookback=20, entry_threshold=-2.0)
+        
+        # Set strategy name if it has that attribute
+        if hasattr(strategy, 'name'):
+            strategy.name = strategy_name
+        elif hasattr(strategy, '__dict__'):
+            strategy.name = strategy_name
         
         strategy_manager.register_strategy(
             strategy,
@@ -150,6 +163,8 @@ if st.button("Register Strategy", type="primary"):
         st.rerun()
     except Exception as e:
         st.error(f"Error registering strategy: {e}")
+        import traceback
+        st.code(traceback.format_exc(), language='python')
 
 st.markdown("<br>", unsafe_allow_html=True)
 
