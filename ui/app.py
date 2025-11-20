@@ -435,13 +435,13 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
 # Top metrics row
-    col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4 = st.columns(4)
 
 pnl_color = "#10b981" if st.session_state.pnl >= 0 else "#ef4444"
 pnl_sign = "+" if st.session_state.pnl >= 0 else ""
-    
-    with col1:
-        st.markdown(f"""
+
+with col1:
+    st.markdown(f"""
     <div class="metric-card">
         <div class="metric-label">Total P&L</div>
         <div class="metric-value-large">{pnl_sign}${abs(st.session_state.pnl):,.0f}</div>
@@ -450,12 +450,12 @@ pnl_sign = "+" if st.session_state.pnl >= 0 else ""
         </div>
         </div>
         """, unsafe_allow_html=True)
-    
-    with col2:
-        market_status = "OPEN" if datetime.now().hour >= 9 and datetime.now().hour < 16 else "CLOSED"
+
+with col2:
+    market_status = "OPEN" if datetime.now().hour >= 9 and datetime.now().hour < 16 else "CLOSED"
     market_color = "#10b981" if market_status == "OPEN" else "#ef4444"
     market_bg = "rgba(16, 185, 129, 0.15)" if market_status == "OPEN" else "rgba(239, 68, 68, 0.15)"
-        st.markdown(f"""
+    st.markdown(f"""
     <div class="metric-card">
         <div class="metric-label">Market Status</div>
         <div style="font-size: 24px; font-weight: 700; color: {market_color}; margin: 12px 0;">
@@ -463,11 +463,11 @@ pnl_sign = "+" if st.session_state.pnl >= 0 else ""
         </div>
         </div>
         """, unsafe_allow_html=True)
-    
-    with col3:
-        latency = 23
+
+with col3:
+    latency = 23
     latency_color = "#10b981" if latency < 50 else "#f59e0b" if latency < 100 else "#ef4444"
-        st.markdown(f"""
+    st.markdown(f"""
     <div class="metric-card">
         <div class="metric-label">System Latency</div>
         <div style="font-size: 28px; font-weight: 700; color: {latency_color}; margin: 12px 0;">
@@ -475,8 +475,8 @@ pnl_sign = "+" if st.session_state.pnl >= 0 else ""
         </div>
         </div>
         """, unsafe_allow_html=True)
-    
-    with col4:
+
+with col4:
     st.markdown(f"""
     <div class="metric-card">
         <div class="metric-label">System Health</div>
@@ -485,55 +485,55 @@ pnl_sign = "+" if st.session_state.pnl >= 0 else ""
             </div>
         </div>
         """, unsafe_allow_html=True)
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    
+
+st.markdown("<br>", unsafe_allow_html=True)
+
 # Market data row
-    col1, col2, col3 = st.columns(3)
+col1, col2, col3 = st.columns(3)
+
+# Fetch market data
+try:
+    import yfinance as yf
+    sp500 = yf.Ticker("^GSPC")
+    nasdaq = yf.Ticker("^IXIC")
+    eurusd = yf.Ticker("EURUSD=X")
     
-    # Fetch market data
-    try:
-        import yfinance as yf
-        sp500 = yf.Ticker("^GSPC")
-        nasdaq = yf.Ticker("^IXIC")
-        eurusd = yf.Ticker("EURUSD=X")
-        
-        sp500_info = sp500.history(period="2d")
-        nasdaq_info = nasdaq.history(period="2d")
-        eurusd_info = eurusd.history(period="2d")
-        
-        if not sp500_info.empty:
-            sp500_value = float(sp500_info['Close'].iloc[-1])
-            sp500_prev = float(sp500_info['Close'].iloc[-2]) if len(sp500_info) > 1 else sp500_value
-            sp500_change = ((sp500_value - sp500_prev) / sp500_prev) * 100
-        else:
-            sp500_value = 4150.25
-            sp500_change = 1.24
-        
-        if not nasdaq_info.empty:
-            nasdaq_value = float(nasdaq_info['Close'].iloc[-1])
-            nasdaq_prev = float(nasdaq_info['Close'].iloc[-2]) if len(nasdaq_info) > 1 else nasdaq_value
-            nasdaq_change = ((nasdaq_value - nasdaq_prev) / nasdaq_prev) * 100
-        else:
-            nasdaq_value = 13600.81
-            nasdaq_change = 0.89
-        
-        if not eurusd_info.empty:
-            eurusd_value = float(eurusd_info['Close'].iloc[-1])
-            eurusd_prev = float(eurusd_info['Close'].iloc[-2]) if len(eurusd_info) > 1 else eurusd_value
-            eurusd_change = ((eurusd_value - eurusd_prev) / eurusd_prev) * 100
-        else:
-            eurusd_value = 1.0685
-            eurusd_change = -0.12
-    except Exception:
+    sp500_info = sp500.history(period="2d")
+    nasdaq_info = nasdaq.history(period="2d")
+    eurusd_info = eurusd.history(period="2d")
+    
+    if not sp500_info.empty:
+        sp500_value = float(sp500_info['Close'].iloc[-1])
+        sp500_prev = float(sp500_info['Close'].iloc[-2]) if len(sp500_info) > 1 else sp500_value
+        sp500_change = ((sp500_value - sp500_prev) / sp500_prev) * 100
+    else:
+        sp500_value = 4150.25
+        sp500_change = 1.24
+    
+    if not nasdaq_info.empty:
+        nasdaq_value = float(nasdaq_info['Close'].iloc[-1])
+        nasdaq_prev = float(nasdaq_info['Close'].iloc[-2]) if len(nasdaq_info) > 1 else nasdaq_value
+        nasdaq_change = ((nasdaq_value - nasdaq_prev) / nasdaq_prev) * 100
+    else:
+        nasdaq_value = 13600.81
+        nasdaq_change = 0.89
+    
+    if not eurusd_info.empty:
+        eurusd_value = float(eurusd_info['Close'].iloc[-1])
+        eurusd_prev = float(eurusd_info['Close'].iloc[-2]) if len(eurusd_info) > 1 else eurusd_value
+        eurusd_change = ((eurusd_value - eurusd_prev) / eurusd_prev) * 100
+    else:
+        eurusd_value = 1.0685
+        eurusd_change = -0.12
+except Exception:
         sp500_value = 4150.25
         sp500_change = 1.24
         nasdaq_value = 13600.81
         nasdaq_change = 0.89
         eurusd_value = 1.0685
         eurusd_change = -0.12
-    
-    with col1:
+
+with col1:
         change_class = "metric-change-positive" if sp500_change >= 0 else "metric-change-negative"
         change_sign = "+" if sp500_change >= 0 else ""
         st.markdown(f"""
@@ -543,8 +543,8 @@ pnl_sign = "+" if st.session_state.pnl >= 0 else ""
         <div class="metric-change {change_class}">{change_sign}{sp500_change:.2f}%</div>
         </div>
         """, unsafe_allow_html=True)
-    
-    with col2:
+
+with col2:
         change_class = "metric-change-positive" if nasdaq_change >= 0 else "metric-change-negative"
         change_sign = "+" if nasdaq_change >= 0 else ""
         st.markdown(f"""
@@ -554,8 +554,8 @@ pnl_sign = "+" if st.session_state.pnl >= 0 else ""
         <div class="metric-change {change_class}">{change_sign}{nasdaq_change:.2f}%</div>
         </div>
         """, unsafe_allow_html=True)
-    
-    with col3:
+
+with col3:
         change_class = "metric-change-positive" if eurusd_change >= 0 else "metric-change-negative"
         change_sign = "+" if eurusd_change >= 0 else ""
         st.markdown(f"""
@@ -567,13 +567,13 @@ pnl_sign = "+" if st.session_state.pnl >= 0 else ""
         <div class="metric-change {change_class}">{change_sign}{eurusd_change:.2f}%</div>
         </div>
         """, unsafe_allow_html=True)
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Chart and Order Entry row
-    col_chart, col_order = st.columns([0.6, 0.4])
-    
-    with col_chart:
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+# Chart and Order Entry row
+col_chart, col_order = st.columns([0.6, 0.4])
+
+with col_chart:
         st.markdown('<div class="section-header">📈 Market Chart</div>', unsafe_allow_html=True)
     
         # Get available symbols for selector
@@ -655,8 +655,8 @@ pnl_sign = "+" if st.session_state.pnl >= 0 else ""
         except Exception as e:
             st.error(f"Error loading chart data: {e}")
             st.stop()
-        
-        if not chart_data.empty:
+            
+            if not chart_data.empty:
                 # Sort by date to ensure correct order
                 chart_data = chart_data.sort_values('date')
                 
