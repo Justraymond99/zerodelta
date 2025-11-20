@@ -64,15 +64,21 @@ if symbols:
         # Get historical returns
         try:
             with engine.begin() as conn:
-                prices_query = f"""
-                    SELECT symbol, date, adj_close
-                    FROM prices
-                    WHERE symbol IN ({','.join(['?' for _ in selected_symbols])})
-                    AND date >= DATE('now', '-252 days')
-                    ORDER BY date
-                """
-                prices_df = pd.read_sql(text(prices_query.replace('?', ':sym')), conn,
-                                       params={f'sym{i}': s for i, s in enumerate(selected_symbols)})
+                # Create proper placeholders for SQL IN clause
+                placeholders = ','.join([f':sym{i}' for i in range(len(selected_symbols))])
+                params = {f'sym{i}': s for i, s in enumerate(selected_symbols)}
+                
+                prices_df = pd.read_sql(
+                    text(f"""
+                        SELECT symbol, date, adj_close
+                        FROM prices
+                        WHERE symbol IN ({placeholders})
+                        AND date >= CURRENT_DATE - INTERVAL '252 days'
+                        ORDER BY date
+                    """),
+                    conn,
+                    params=params
+                )
             
             if not prices_df.empty:
                 # Pivot to get returns
