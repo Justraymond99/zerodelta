@@ -853,8 +853,8 @@ with col_trades:
             )
         else:
             st.info("No trades yet")
-    
-    with col_algo:
+
+with col_algo:
         st.markdown('<div class="section-header">🤖 Algo Control</div>', unsafe_allow_html=True)
         if st.button("▶️ Start Algorithm", type="primary", use_container_width=True, key="algo_btn"):
             st.session_state.algo_running = not st.session_state.algo_running
@@ -871,8 +871,8 @@ with col_trades:
             </div>
         </div>
         """, unsafe_allow_html=True)
-    
-    with col_logs:
+
+with col_logs:
         st.markdown('<div class="section-header">📋 System Logs</div>', unsafe_allow_html=True)
         log_container = st.container()
         with log_container:
