@@ -468,8 +468,8 @@ with st.sidebar:
 
 pnl_color = "#10b981" if st.session_state.pnl >= 0 else "#ef4444"
 pnl_sign = "+" if st.session_state.pnl >= 0 else ""
-    
-    with col1:
+
+with col1:
         st.markdown(f"""
     <div class="metric-card">
         <div class="metric-label">Total P&L</div>
