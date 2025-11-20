@@ -1,0 +1,18 @@
+[Unit]
+Description=QS Trading System Daemon - Continuous Market Analysis
+After=network.target
+
+[Service]
+Type=simple
+User=your_user
+WorkingDirectory=/path/to/qs
+Environment="PYTHONPATH=/path/to/qs"
+ExecStart=/usr/bin/python3 /path/to/qs/bin/qs_daemon.py --mode both --log-file /path/to/qs/logs/qs_daemon.log
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+
