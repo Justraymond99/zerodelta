@@ -7,7 +7,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import streamlit as st
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if ROOT_DIR not in sys.path:
@@ -34,13 +34,60 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 settings = get_settings()
-engine = create_engine(f"duckdb:///{settings.duckdb_path}?read_only=TRUE")
 
-try:
-    signals = pd.read_sql(text("SELECT DISTINCT signal_name FROM signals ORDER BY signal_name"), engine)['signal_name'].tolist()
-except Exception:
-    st.warning("Database is busy; retry in a few seconds while data is loading.")
-    signals = []
+# Use shared database connection with retry logic
+from qs.db import get_engine
+import time
+
+signals = []
+max_retries = 5
+retry_delay = 0.3
+
+for attempt in range(max_retries):
+    try:
+        engine = get_engine()
+        # Use a short timeout connection
+        conn = engine.connect()
+        try:
+            signals_df = pd.read_sql(
+                text("SELECT DISTINCT signal_name FROM signals ORDER BY signal_name"), 
+                conn
+            )
+            signals = signals_df['signal_name'].tolist() if not signals_df.empty else []
+            conn.close()
+            break
+        except Exception as e:
+            conn.close()
+            raise e
+    except Exception as e:
+        error_msg = str(e).lower()
+        if "busy" in error_msg or "lock" in error_msg:
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay * (attempt + 1))
+                continue
+            else:
+                st.warning(f"⚠️ Database is busy. Please wait a moment and refresh the page.")
+                st.info("💡 This usually happens when data is being loaded or updated.")
+        else:
+            # Check if signals table exists
+            try:
+                engine = get_engine()
+                conn = engine.connect()
+                try:
+                    result = conn.execute(
+                        text("SELECT COUNT(*) as cnt FROM information_schema.tables WHERE table_schema = 'main' AND table_name = 'signals'")
+                    ).fetchone()
+                    conn.close()
+                    if not result or result[0] == 0:
+                        st.info("💡 No signals data available yet. Train a model first to generate signals.")
+                    else:
+                        st.warning(f"⚠️ Database connection error. Please refresh the page.")
+                except:
+                    conn.close()
+                    st.info("💡 Unable to connect to database. Please ensure the database file is not locked by another process.")
+            except:
+                st.info("💡 Database connection issue. Please refresh the page.")
+            break
 
 col1, col2 = st.columns(2)
 with col1:

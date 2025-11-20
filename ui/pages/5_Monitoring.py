@@ -6,7 +6,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
 from datetime import datetime, timedelta
 import time
 
@@ -37,8 +37,8 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-settings = get_settings()
-engine = create_engine(f"duckdb:///{settings.duckdb_path}?read_only=TRUE")
+from qs.db import get_engine
+engine = get_engine()
 
 # Auto-refresh
 with st.sidebar:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import pandas as pd
 import numpy as np
 from typing import Dict, List
-from .db import get_engine
+from ..db import get_engine
 from sqlalchemy import text
 from ..utils.logger import get_logger
 

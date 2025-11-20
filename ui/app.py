@@ -183,6 +183,127 @@ st.markdown("""
         border-radius: 12px;
         overflow: hidden;
     }
+    
+    /* Sidebar styling */
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, rgba(10, 14, 39, 0.95) 0%, rgba(26, 31, 58, 0.95) 100%);
+        backdrop-filter: blur(20px);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+    }
+    
+    [data-testid="stSidebar"] > div:first-child {
+        background: transparent;
+    }
+    
+    /* Sidebar header/navigation */
+    [data-testid="stSidebarNav"] {
+        background: transparent;
+    }
+    
+    [data-testid="stSidebarNav"] ul {
+        background: transparent;
+    }
+    
+    [data-testid="stSidebarNav"] a {
+        color: #94a3b8;
+        border-radius: 8px;
+        padding: 8px 12px;
+        margin: 2px 0;
+        transition: all 0.2s ease;
+    }
+    
+    [data-testid="stSidebarNav"] a:hover {
+        background: rgba(0, 212, 255, 0.1);
+        color: #00d4ff;
+    }
+    
+    [data-testid="stSidebarNav"] a[aria-current="page"] {
+        background: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(0, 150, 255, 0.1) 100%);
+        color: #00d4ff;
+        border-left: 3px solid #00d4ff;
+        font-weight: 600;
+    }
+    
+    /* Sidebar content */
+    [data-testid="stSidebar"] .element-container {
+        background: transparent;
+    }
+    
+    [data-testid="stSidebar"] h3 {
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 20px;
+        margin-bottom: 12px;
+    }
+    
+    [data-testid="stSidebar"] .stMarkdown {
+        color: #94a3b8;
+    }
+    
+    [data-testid="stSidebar"] .stMarkdown h3 {
+        color: #ffffff;
+    }
+    
+    /* Sidebar inputs */
+    [data-testid="stSidebar"] .stCheckbox > label,
+    [data-testid="stSidebar"] .stSlider > label {
+        color: #94a3b8;
+    }
+    
+    [data-testid="stSidebar"] .stCheckbox [data-baseweb="checkbox"] {
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    [data-testid="stSidebar"] .stCheckbox [data-baseweb="checkbox"]:checked {
+        background: linear-gradient(135deg, #00d4ff 0%, #0096ff 100%);
+        border-color: #00d4ff;
+    }
+    
+    [data-testid="stSidebar"] .stSlider [data-baseweb="slider"] {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    [data-testid="stSidebar"] .stSlider [data-baseweb="slider-track"] {
+        background: rgba(0, 212, 255, 0.2);
+    }
+    
+    [data-testid="stSidebar"] .stSlider [data-baseweb="thumb"] {
+        background: linear-gradient(135deg, #00d4ff 0%, #0096ff 100%);
+        border-color: #00d4ff;
+    }
+    
+    /* Sidebar buttons */
+    [data-testid="stSidebar"] .stButton > button {
+        width: 100%;
+        background: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(0, 150, 255, 0.1) 100%);
+        border: 1px solid rgba(0, 212, 255, 0.3);
+        color: #00d4ff;
+        font-weight: 600;
+    }
+    
+    [data-testid="stSidebar"] .stButton > button:hover {
+        background: linear-gradient(135deg, rgba(0, 212, 255, 0.25) 0%, rgba(0, 150, 255, 0.2) 100%);
+        border-color: #00d4ff;
+        transform: translateY(-1px);
+    }
+    
+    /* Sidebar info boxes */
+    [data-testid="stSidebar"] .stAlert {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        color: #94a3b8;
+    }
+    
+    /* Sidebar divider */
+    [data-testid="stSidebar"] hr {
+        border-color: rgba(255, 255, 255, 0.1);
+        margin: 16px 0;
+    }
 </style>
 """, unsafe_allow_html=True)
 

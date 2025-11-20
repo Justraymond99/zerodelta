@@ -6,7 +6,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if ROOT_DIR not in sys.path:
@@ -31,8 +31,9 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+from qs.db import get_engine
 settings = get_settings()
-engine = create_engine(f"duckdb:///{settings.duckdb_path}?read_only=TRUE")
+engine = get_engine()
 
 # Default popular tickers if database is empty
 POPULAR_TICKERS = [

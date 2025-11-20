@@ -82,8 +82,7 @@ if st.button("Run Attribution Analysis", type="primary"):
                         'xaxis': dict(showgrid=False, showline=True, linecolor='rgba(255, 255, 255, 0.2)'),
                         'yaxis': dict(showgrid=True, gridcolor='rgba(255, 255, 255, 0.1)', showline=True, linecolor='rgba(255, 255, 255, 0.2)', title='P&L ($)'),
                         'hovermode': 'closest',
-                        'title': 'Top 10 Contributors by P&L',
-                        'titlefont': dict(color='#ffffff', size=18)
+                        'title': dict(text='Top 10 Contributors by P&L', font=dict(color='#ffffff', size=18))
                     })
                     fig.update_layout(**layout)
                     st.plotly_chart(fig, use_container_width=True, config=CHART_CONFIG)

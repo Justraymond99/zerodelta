@@ -6,7 +6,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if ROOT_DIR not in sys.path:
@@ -31,8 +31,9 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+from qs.db import get_engine
 settings = get_settings()
-engine = create_engine(f"duckdb:///{settings.duckdb_path}?read_only=TRUE")
+engine = get_engine()
 
 try:
     symbols = pd.read_sql(text("SELECT DISTINCT symbol FROM features ORDER BY symbol"), engine)['symbol'].tolist()
@@ -68,8 +69,7 @@ if sym and feat:
         layout = CHART_LAYOUT.copy()
         layout.update({
             'height': 450,
-            'title': f"{feat} - {sym}",
-            'titlefont': dict(color='#ffffff', size=18)
+            'title': dict(text=f"{feat} - {sym}", font=dict(color='#ffffff', size=18))
         })
         fig.update_layout(**layout)
         st.plotly_chart(fig, use_container_width=True, config=CHART_CONFIG)
