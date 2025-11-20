@@ -55,8 +55,20 @@ try:
         # Store in sys.modules BEFORE executing to allow relative imports
         sys.modules['qs.strategies_file'] = strategies_module
         
-        # Execute the module (this will resolve relative imports)
-        spec.loader.exec_module(strategies_module)
+        # Before executing, we need to ensure the module can resolve relative imports
+        # The strategies.py file uses "from ..utils.logger" which requires parent package
+        # Let's modify the import to work with our module context
+        import types
+        
+        # Read the file content and fix relative imports
+        file_content = strategies_file.read_text()
+        # Replace relative imports with absolute imports for this execution
+        file_content = file_content.replace('from ..utils', 'from qs.utils')
+        file_content = file_content.replace('from ..', 'from qs.')
+        
+        # Compile and execute with the module's namespace
+        code = compile(file_content, str(strategies_file), 'exec')
+        exec(code, strategies_module.__dict__)
         
         # Extract the classes
         MomentumStrategy = getattr(strategies_module, 'MomentumStrategy', None)
