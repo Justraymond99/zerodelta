@@ -16,42 +16,24 @@ from qs.db import get_engine, init_db
 from qs.strategies.manager import get_strategy_manager
 from sqlalchemy.exc import ProgrammingError, OperationalError
 
-# Import strategy classes - handle the conflict between qs/strategies.py and qs/strategies/
-# The __init__.py in qs/strategies/ tries to import from the file, but we need to ensure
-# the file module is loaded first with proper package context
+# Import strategy classes - the __init__.py in qs/strategies/ should expose them
 try:
-    # First, ensure qs package is imported
-    import qs
-    
-    # Import the strategies.py file module directly with proper package context
-    import importlib.util
-    from pathlib import Path
-    
-    # Get the strategies.py file path
-    qs_path = Path(qs.__file__).parent if hasattr(qs, '__file__') else Path(__file__).parent.parent.parent / "qs"
-    strategies_file = qs_path / "strategies.py"
-    
-    if strategies_file.exists():
-        # Load the module with proper package context to handle relative imports
-        spec = importlib.util.spec_from_file_location("qs.strategies_module", strategies_file)
-        strategies_module = importlib.util.module_from_spec(spec)
-        # Set package and name to allow relative imports to work
-        strategies_module.__package__ = 'qs'
-        strategies_module.__name__ = 'qs.strategies_module'
-        # Execute the module
-        spec.loader.exec_module(strategies_module)
-        
-        MomentumStrategy = getattr(strategies_module, 'MomentumStrategy', None)
-        MeanReversionStrategy = getattr(strategies_module, 'MeanReversionStrategy', None)
-        MLStrategy = getattr(strategies_module, 'MLStrategy', None)
-    else:
-        # Fallback: try importing from package
-        from qs.strategies import MomentumStrategy, MeanReversionStrategy, MLStrategy
-except (ImportError, AttributeError, Exception):
-    # Final fallback: set to None
+    from qs.strategies import MomentumStrategy, MeanReversionStrategy, MLStrategy
+    # Verify they're actually callable classes
+    if not (MomentumStrategy and callable(MomentumStrategy)):
+        MomentumStrategy = None
+    if not (MeanReversionStrategy and callable(MeanReversionStrategy)):
+        MeanReversionStrategy = None
+    if not (MLStrategy and callable(MLStrategy)):
+        MLStrategy = None
+except ImportError:
+    # Fallback: try direct import
     try:
-        from qs.strategies import MomentumStrategy, MeanReversionStrategy, MLStrategy
-    except:
+        import qs.strategies as strategies_pkg
+        MomentumStrategy = getattr(strategies_pkg, 'MomentumStrategy', None)
+        MeanReversionStrategy = getattr(strategies_pkg, 'MeanReversionStrategy', None)
+        MLStrategy = getattr(strategies_pkg, 'MLStrategy', None)
+    except Exception:
         MomentumStrategy = None
         MeanReversionStrategy = None
         MLStrategy = None
