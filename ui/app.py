@@ -719,8 +719,8 @@ with col_chart:
         except Exception as e:
             st.warning(f"Chart error: {e}")
         st.info("💡 If you see a database error, try clicking '📥 Fetch Popular Tickers' in the sidebar to initialize data.")
-    
-    with col_order:
+
+with col_order:
     st.markdown('<div class="section-header">📝 Order Entry</div>', unsafe_allow_html=True)
     
     with st.container():
