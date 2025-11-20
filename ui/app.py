@@ -806,7 +806,7 @@ with col_order:
     col_trades, col_algo, col_logs = st.columns([0.4, 0.3, 0.3])
     
     with col_trades:
-    st.markdown('<div class="section-header">📊 Recent Trades</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">📊 Recent Trades</div>', unsafe_allow_html=True)
         if st.session_state.trades:
             trades_df = pd.DataFrame(st.session_state.trades)
             st.dataframe(
