@@ -479,12 +479,12 @@ with col1:
         </div>
         </div>
         """, unsafe_allow_html=True)
-    
-    with col2:
-        market_status = "OPEN" if datetime.now().hour >= 9 and datetime.now().hour < 16 else "CLOSED"
+
+with col2:
+    market_status = "OPEN" if datetime.now().hour >= 9 and datetime.now().hour < 16 else "CLOSED"
     market_color = "#10b981" if market_status == "OPEN" else "#ef4444"
     market_bg = "rgba(16, 185, 129, 0.15)" if market_status == "OPEN" else "rgba(239, 68, 68, 0.15)"
-        st.markdown(f"""
+    st.markdown(f"""
     <div class="metric-card">
         <div class="metric-label">Market Status</div>
         <div style="font-size: 24px; font-weight: 700; color: {market_color}; margin: 12px 0;">
