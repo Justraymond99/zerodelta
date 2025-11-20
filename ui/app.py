@@ -825,14 +825,14 @@ with col_order:
             st.info("No trades yet")
     
     with col_algo:
-    st.markdown('<div class="section-header">🤖 Algo Control</div>', unsafe_allow_html=True)
-    if st.button("▶️ Start Algorithm", type="primary", use_container_width=True, key="algo_btn"):
+        st.markdown('<div class="section-header">🤖 Algo Control</div>', unsafe_allow_html=True)
+        if st.button("▶️ Start Algorithm", type="primary", use_container_width=True, key="algo_btn"):
             st.session_state.algo_running = not st.session_state.algo_running
-        status = "started" if st.session_state.algo_running else "stopped"
-        st.session_state.logs.insert(0, f"{datetime.now().strftime('%H:%M:%S')} Algorithm {status}")
+            status = "started" if st.session_state.algo_running else "stopped"
+            st.session_state.logs.insert(0, f"{datetime.now().strftime('%H:%M:%S')} Algorithm {status}")
         
-    status_color = "#10b981" if st.session_state.algo_running else "#64748b"
-    status_text = "🟢 Running" if st.session_state.algo_running else "⏸️ Stopped"
+        status_color = "#10b981" if st.session_state.algo_running else "#64748b"
+        status_text = "🟢 Running" if st.session_state.algo_running else "⏸️ Stopped"
         st.markdown(f"""
     <div style="margin-top: 20px; padding: 16px; background: rgba(255, 255, 255, 0.05); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);">
         <div style="font-size: 12px; color: #94a3b8; margin-bottom: 8px;">STATUS</div>
@@ -843,14 +843,14 @@ with col_order:
         """, unsafe_allow_html=True)
     
     with col_logs:
-    st.markdown('<div class="section-header">📋 System Logs</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">📋 System Logs</div>', unsafe_allow_html=True)
         log_container = st.container()
         with log_container:
-        log_html = '<div style="background: rgba(0, 0, 0, 0.3); border-radius: 12px; padding: 16px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px;">'
+            log_html = '<div style="background: rgba(0, 0, 0, 0.3); border-radius: 12px; padding: 16px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px;">'
             for log in st.session_state.logs[:10]:
-            log_html += f'<div style="color: #94a3b8; padding: 4px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">{log}</div>'
-        log_html += '</div>'
-        st.markdown(log_html, unsafe_allow_html=True)
+                log_html += f'<div style="color: #94a3b8; padding: 4px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">{log}</div>'
+            log_html += '</div>'
+            st.markdown(log_html, unsafe_allow_html=True)
             
             if not st.session_state.logs:
                 st.info("No logs yet")
